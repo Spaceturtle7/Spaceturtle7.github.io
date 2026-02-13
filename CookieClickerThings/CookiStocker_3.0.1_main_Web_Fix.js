@@ -608,6 +608,21 @@ CookiStocker.save = function() {
 	return str;
 }
 
+CookiStocker.state = {
+	stockerAutoTrading:		+!!stockerAutoTrading,
+	stockerMarketOn:		+!!stockerMarketOn,
+	stockerAutoBuyMinimumBrokers:	+!!stockerAutoBuyMinimumBrokers,
+	stockerAutoBuyAdditionalBrokers:+!!stockerAutoBuyAdditionalBrokers,
+	stockerResourcesWarning:	+!!stockerResourcesWarning,
+	stockerExponential:		+!!stockerExponential,
+	stockerTransactionNotifications:+!!stockerTransactionNotifications,
+	stockerActivityReport:		+!!stockerActivityReport,
+	stockerFastNotifications:	+!!stockerFastNotifications,
+	stockerConsoleAnnouncements:	+!!stockerConsoleAnnouncements,
+	stockerAdditionalTradingStats:	+!!stockerAdditionalTradingStats,
+	stockerForceLoopUpdates:	+!!stockerForceLoopUpdates
+};
+
 CookiStocker.load = function(str) {
 	let i = 0;
 	let j, k, m;
@@ -1251,23 +1266,6 @@ CookiStocker.Reports = function() {
 
 
 // ===== CookiStocker options UI & persistence =====
-
-/** Mirror of boolean prefs for CCSE.ToggleButton to read/write.
-    We keep the *real* vars exactly where they are (top of file); we just sync them here. */
-CookiStocker.state = {
-	stockerAutoTrading:		+!!stockerAutoTrading,
-	stockerMarketOn:		+!!stockerMarketOn,
-	stockerAutoBuyMinimumBrokers:	+!!stockerAutoBuyMinimumBrokers,
-	stockerAutoBuyAdditionalBrokers:+!!stockerAutoBuyAdditionalBrokers,
-	stockerResourcesWarning:	+!!stockerResourcesWarning,
-	stockerExponential:		+!!stockerExponential,
-	stockerTransactionNotifications:+!!stockerTransactionNotifications,
-	stockerActivityReport:		+!!stockerActivityReport,
-	stockerFastNotifications:	+!!stockerFastNotifications,
-	stockerConsoleAnnouncements:	+!!stockerConsoleAnnouncements,
-	stockerAdditionalTradingStats:	+!!stockerAdditionalTradingStats,
-	stockerForceLoopUpdates:	+!!stockerForceLoopUpdates
-};
 
 // Toggle handler (signature matches CCSE.MenuHelper.ToggleButton)
 CookiStocker.Toggle = function(prefName, button, on, off, invert) {

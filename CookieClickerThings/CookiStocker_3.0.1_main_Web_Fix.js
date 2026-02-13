@@ -608,6 +608,129 @@ CookiStocker.save = function() {
 	return str;
 }
 
+CookiStocker.load = function(str) {
+	let i = 0;
+	let j, k, m;
+
+	if (typeof CookiStocker.Bank === 'undefined' || !str || !(stockList.Goods[0].name.length > 0))
+		return false;
+
+	// --- strip optional config tail BEFORE underscore parsing ---
+	let cfg = null;
+	let cfgIdx = (str || '').indexOf('|CFG:');
+	if (cfgIdx > -1) {
+		try { cfg = JSON.parse(str.slice(cfgIdx + 5)); } catch (e) { cfg = null; }
+		str = str.slice(0, cfgIdx);	// strip tail now so tokens are clean
+	}
+
+	let spl = str.split('_');
+
+	let market = CookiStocker.Bank.goodsById;
+
+	stockList.Check = Number(spl[i++] || 0);
+	for (j = 0; j < market.length; j++) {
+		stockList.Goods[j].name = decodeURIComponent(spl[i++] || 0);
+		stockList.Goods[j].stock = Number(spl[i++] || 0);
+		stockList.Goods[j].val = Number(spl[i++] || 0);
+		stockList.Goods[j].currentPrice = Number(spl[i++] || 0);
+		stockList.Goods[j].mode = Number(spl[i++] || 0);
+		stockList.Goods[j].lastMode = Number(spl[i++] || 0);
+		stockList.Goods[j].lastDur = Number(spl[i++] || 0);
+		stockList.Goods[j].unchangedDur = Number(spl[i++] || 0);
+		stockList.Goods[j].dropCount = Number(spl[i++] || 0);
+		stockList.Goods[j].riseCount = Number(spl[i++] || 0);
+		stockList.Goods[j].profit = Number(spl[i++] || 0);
+		stockList.Goods[j].someSold = !!(+spl[i++] || 0);
+		stockList.Goods[j].someBought = !!(+spl[i++] || 0);
+	}
+	stockList.Start = Number(spl[i++] || 0);
+	stockList.lastTime = Number(spl[i++] || 0);
+	stockList.startingProfits = Number(spl[i++] || 0);
+	stockList.Profits = Number(spl[i++] || 0);
+	stockList.netProfits = Number(spl[i++] || 0);
+	stockList.grossProfits = Number(spl[i++] || 0);
+	stockList.grossLosses = Number(spl[i++] || 0);
+	stockList.totalStocks = Number(spl[i++] || 0);
+	stockList.totalShares = Number(spl[i++] || 0);
+	stockList.totalValue = Number(spl[i++] || 0);
+	stockList.unrealizedProfits = Number(spl[i++] || 0);
+	stockList.profitableStocks = Number(spl[i++] || 0);
+	stockList.unprofitableStocks = Number(spl[i++] || 0);
+	stockList.profitableTrades = Number(spl[i++] || 0);
+	stockList.unprofitableTrades = Number(spl[i++] || 0);
+	stockList.Purchases = Number(spl[i++] || 0);
+	stockList.Sales = Number(spl[i++] || 0);
+	stockList.Uptime = Number(spl[i++] || 0);
+	stockList.hourlyProfits = Number(spl[i++] || 0);
+	stockList.dailyProfits = Number(spl[i++] || 0);
+	stockList.minCookies = Number(spl[i++] || Number.MAX_VALUE);
+	stockList.maxCookies = Number(spl[i++] || 0);
+	stockList.noModActions = !!(+spl[i++] || 0);
+	stockList.origCookiesPsRawHighest = Number(spl[i++] || 0);
+
+	for (j = 0; j < stockerModeProfits.length; j++)
+		for (k = 0; k < stockerModeProfits[j].length; k++)
+			for (m = 0; m < stockerModeProfits[j][k].length; m++)
+				stockerModeProfits[j][k][m] = Number(spl[i++] || 0);
+
+	// Ensure the two achievements are present before assigning .won
+	CookiStocker.ensureAchievements();
+
+	// Parse defensively to avoid resurrecting NaN from an older save
+	let t = +spl[i++];	Game.Achievements['Plasmic assets'].won						= (t === 1 ? 1 : 0);
+	    t = +spl[i++];	Game.Achievements['Bose-Einstein Condensed Assets'].won	= (t === 1 ? 1 : 0);
+
+	// --- apply cfg tail (if present) ---
+	if (cfg) {
+		// Assign back to the *real* globals
+		if ('stockerAutoTrading' in cfg)			stockerAutoTrading = !!cfg.stockerAutoTrading;
+		if ('stockerMarketOn' in cfg)				stockerMarketOn = !!cfg.stockerMarketOn;
+		if ('stockerMinBrokers' in cfg)				stockerMinBrokers = +cfg.stockerMinBrokers|0;
+		if ('stockerCookiesThreshold' in cfg)			stockerCookiesThreshold = Math.max(0, Math.min(1, +cfg.stockerCookiesThreshold));
+		if ('stockerAutoBuyMinimumBrokers' in cfg)		stockerAutoBuyMinimumBrokers = !!cfg.stockerAutoBuyMinimumBrokers;
+		if ('stockerAutoBuyAdditionalBrokers' in cfg)		stockerAutoBuyAdditionalBrokers = !!cfg.stockerAutoBuyAdditionalBrokers;
+		if ('stockerResourcesWarning' in cfg)			stockerResourcesWarning = !!cfg.stockerResourcesWarning;
+		if ('stockerExponential' in cfg)			stockerExponential = !!cfg.stockerExponential;
+		if ('stockerExponentialPower' in cfg)			stockerExponentialPower = +cfg.stockerExponentialPower|0;
+		if ('stockerTransactionNotifications' in cfg)		stockerTransactionNotifications = !!cfg.stockerTransactionNotifications;
+		if ('stockerActivityReport' in cfg)			stockerActivityReport = !!cfg.stockerActivityReport;
+		if ('stockerActivityReportFrequency' in cfg)		stockerActivityReportFrequency = +cfg.stockerActivityReportFrequency|0;
+		if ('stockerFastNotifications' in cfg)			stockerFastNotifications = !!cfg.stockerFastNotifications;
+		if ('stockerConsoleAnnouncements' in cfg)		stockerConsoleAnnouncements = !!cfg.stockerConsoleAnnouncements;
+		if ('stockerAdditionalTradingStats' in cfg)		stockerAdditionalTradingStats = !!cfg.stockerAdditionalTradingStats;
+		if ('stockerLoopFrequency' in cfg)			stockerLoopFrequency = +cfg.stockerLoopFrequency|0;
+		if ('stockerForceLoopUpdates' in cfg)			stockerForceLoopUpdates = !!cfg.stockerForceLoopUpdates;
+
+		// Sync the menu state mirror
+		CookiStocker.state.stockerAutoTrading			= +!!stockerAutoTrading;
+		CookiStocker.state.stockerMarketOn			= +!!stockerMarketOn;
+		CookiStocker.state.stockerAutoBuyMinimumBrokers		= +!!stockerAutoBuyMinimumBrokers;
+		CookiStocker.state.stockerAutoBuyAdditionalBrokers	= +!!stockerAutoBuyAdditionalBrokers;
+		CookiStocker.state.stockerResourcesWarning		= +!!stockerResourcesWarning;
+		CookiStocker.state.stockerExponential			= +!!stockerExponential;
+		CookiStocker.state.stockerTransactionNotifications	= +!!stockerTransactionNotifications;
+		CookiStocker.state.stockerActivityReport		= +!!stockerActivityReport;
+		CookiStocker.state.stockerFastNotifications		= +!!stockerFastNotifications;
+		CookiStocker.state.stockerConsoleAnnouncements		= +!!stockerConsoleAnnouncements;
+		CookiStocker.state.stockerAdditionalTradingStats	= +!!stockerAdditionalTradingStats;
+		CookiStocker.state.stockerForceLoopUpdates		= +!!stockerForceLoopUpdates;
+
+		// Honor report timer if needed
+		CookiStocker.ensureReportTimer();
+
+		// visibility for optional extra stats
+		CookiStocker.state.stockerAdditionalTradingStats = +!!stockerAdditionalTradingStats;
+
+		// honor current setting immediately (post-load)
+		CookiStocker.updateAdditionalStatsVisibility();
+	}
+
+	// First paint with restored settings (also recomputes min/max and calls updateWarn)
+	if (l('bankHeader'))
+		CookiStocker.TradingStats();
+	return true;
+};
+
 Game.registerMod('CookiStocker',{
 	init: function () {
 		Game.registerHook('reset', function (hard) {
@@ -1437,129 +1560,6 @@ function sleepSync(ms) {
 	while (Date.now() < end) {}	// busy-wait
 }
 */
-
-CookiStocker.load = function(str) {
-	let i = 0;
-	let j, k, m;
-
-	if (typeof CookiStocker.Bank === 'undefined' || !str || !(stockList.Goods[0].name.length > 0))
-		return false;
-
-	// --- strip optional config tail BEFORE underscore parsing ---
-	let cfg = null;
-	let cfgIdx = (str || '').indexOf('|CFG:');
-	if (cfgIdx > -1) {
-		try { cfg = JSON.parse(str.slice(cfgIdx + 5)); } catch (e) { cfg = null; }
-		str = str.slice(0, cfgIdx);	// strip tail now so tokens are clean
-	}
-
-	let spl = str.split('_');
-
-	let market = CookiStocker.Bank.goodsById;
-
-	stockList.Check = Number(spl[i++] || 0);
-	for (j = 0; j < market.length; j++) {
-		stockList.Goods[j].name = decodeURIComponent(spl[i++] || 0);
-		stockList.Goods[j].stock = Number(spl[i++] || 0);
-		stockList.Goods[j].val = Number(spl[i++] || 0);
-		stockList.Goods[j].currentPrice = Number(spl[i++] || 0);
-		stockList.Goods[j].mode = Number(spl[i++] || 0);
-		stockList.Goods[j].lastMode = Number(spl[i++] || 0);
-		stockList.Goods[j].lastDur = Number(spl[i++] || 0);
-		stockList.Goods[j].unchangedDur = Number(spl[i++] || 0);
-		stockList.Goods[j].dropCount = Number(spl[i++] || 0);
-		stockList.Goods[j].riseCount = Number(spl[i++] || 0);
-		stockList.Goods[j].profit = Number(spl[i++] || 0);
-		stockList.Goods[j].someSold = !!(+spl[i++] || 0);
-		stockList.Goods[j].someBought = !!(+spl[i++] || 0);
-	}
-	stockList.Start = Number(spl[i++] || 0);
-	stockList.lastTime = Number(spl[i++] || 0);
-	stockList.startingProfits = Number(spl[i++] || 0);
-	stockList.Profits = Number(spl[i++] || 0);
-	stockList.netProfits = Number(spl[i++] || 0);
-	stockList.grossProfits = Number(spl[i++] || 0);
-	stockList.grossLosses = Number(spl[i++] || 0);
-	stockList.totalStocks = Number(spl[i++] || 0);
-	stockList.totalShares = Number(spl[i++] || 0);
-	stockList.totalValue = Number(spl[i++] || 0);
-	stockList.unrealizedProfits = Number(spl[i++] || 0);
-	stockList.profitableStocks = Number(spl[i++] || 0);
-	stockList.unprofitableStocks = Number(spl[i++] || 0);
-	stockList.profitableTrades = Number(spl[i++] || 0);
-	stockList.unprofitableTrades = Number(spl[i++] || 0);
-	stockList.Purchases = Number(spl[i++] || 0);
-	stockList.Sales = Number(spl[i++] || 0);
-	stockList.Uptime = Number(spl[i++] || 0);
-	stockList.hourlyProfits = Number(spl[i++] || 0);
-	stockList.dailyProfits = Number(spl[i++] || 0);
-	stockList.minCookies = Number(spl[i++] || Number.MAX_VALUE);
-	stockList.maxCookies = Number(spl[i++] || 0);
-	stockList.noModActions = !!(+spl[i++] || 0);
-	stockList.origCookiesPsRawHighest = Number(spl[i++] || 0);
-
-	for (j = 0; j < stockerModeProfits.length; j++)
-		for (k = 0; k < stockerModeProfits[j].length; k++)
-			for (m = 0; m < stockerModeProfits[j][k].length; m++)
-				stockerModeProfits[j][k][m] = Number(spl[i++] || 0);
-
-	// Ensure the two achievements are present before assigning .won
-	CookiStocker.ensureAchievements();
-
-	// Parse defensively to avoid resurrecting NaN from an older save
-	let t = +spl[i++];	Game.Achievements['Plasmic assets'].won						= (t === 1 ? 1 : 0);
-	    t = +spl[i++];	Game.Achievements['Bose-Einstein Condensed Assets'].won	= (t === 1 ? 1 : 0);
-
-	// --- apply cfg tail (if present) ---
-	if (cfg) {
-		// Assign back to the *real* globals
-		if ('stockerAutoTrading' in cfg)			stockerAutoTrading = !!cfg.stockerAutoTrading;
-		if ('stockerMarketOn' in cfg)				stockerMarketOn = !!cfg.stockerMarketOn;
-		if ('stockerMinBrokers' in cfg)				stockerMinBrokers = +cfg.stockerMinBrokers|0;
-		if ('stockerCookiesThreshold' in cfg)			stockerCookiesThreshold = Math.max(0, Math.min(1, +cfg.stockerCookiesThreshold));
-		if ('stockerAutoBuyMinimumBrokers' in cfg)		stockerAutoBuyMinimumBrokers = !!cfg.stockerAutoBuyMinimumBrokers;
-		if ('stockerAutoBuyAdditionalBrokers' in cfg)		stockerAutoBuyAdditionalBrokers = !!cfg.stockerAutoBuyAdditionalBrokers;
-		if ('stockerResourcesWarning' in cfg)			stockerResourcesWarning = !!cfg.stockerResourcesWarning;
-		if ('stockerExponential' in cfg)			stockerExponential = !!cfg.stockerExponential;
-		if ('stockerExponentialPower' in cfg)			stockerExponentialPower = +cfg.stockerExponentialPower|0;
-		if ('stockerTransactionNotifications' in cfg)		stockerTransactionNotifications = !!cfg.stockerTransactionNotifications;
-		if ('stockerActivityReport' in cfg)			stockerActivityReport = !!cfg.stockerActivityReport;
-		if ('stockerActivityReportFrequency' in cfg)		stockerActivityReportFrequency = +cfg.stockerActivityReportFrequency|0;
-		if ('stockerFastNotifications' in cfg)			stockerFastNotifications = !!cfg.stockerFastNotifications;
-		if ('stockerConsoleAnnouncements' in cfg)		stockerConsoleAnnouncements = !!cfg.stockerConsoleAnnouncements;
-		if ('stockerAdditionalTradingStats' in cfg)		stockerAdditionalTradingStats = !!cfg.stockerAdditionalTradingStats;
-		if ('stockerLoopFrequency' in cfg)			stockerLoopFrequency = +cfg.stockerLoopFrequency|0;
-		if ('stockerForceLoopUpdates' in cfg)			stockerForceLoopUpdates = !!cfg.stockerForceLoopUpdates;
-
-		// Sync the menu state mirror
-		CookiStocker.state.stockerAutoTrading			= +!!stockerAutoTrading;
-		CookiStocker.state.stockerMarketOn			= +!!stockerMarketOn;
-		CookiStocker.state.stockerAutoBuyMinimumBrokers		= +!!stockerAutoBuyMinimumBrokers;
-		CookiStocker.state.stockerAutoBuyAdditionalBrokers	= +!!stockerAutoBuyAdditionalBrokers;
-		CookiStocker.state.stockerResourcesWarning		= +!!stockerResourcesWarning;
-		CookiStocker.state.stockerExponential			= +!!stockerExponential;
-		CookiStocker.state.stockerTransactionNotifications	= +!!stockerTransactionNotifications;
-		CookiStocker.state.stockerActivityReport		= +!!stockerActivityReport;
-		CookiStocker.state.stockerFastNotifications		= +!!stockerFastNotifications;
-		CookiStocker.state.stockerConsoleAnnouncements		= +!!stockerConsoleAnnouncements;
-		CookiStocker.state.stockerAdditionalTradingStats	= +!!stockerAdditionalTradingStats;
-		CookiStocker.state.stockerForceLoopUpdates		= +!!stockerForceLoopUpdates;
-
-		// Honor report timer if needed
-		CookiStocker.ensureReportTimer();
-
-		// visibility for optional extra stats
-		CookiStocker.state.stockerAdditionalTradingStats = +!!stockerAdditionalTradingStats;
-
-		// honor current setting immediately (post-load)
-		CookiStocker.updateAdditionalStatsVisibility();
-	}
-
-	// First paint with restored settings (also recomputes min/max and calls updateWarn)
-	if (l('bankHeader'))
-		CookiStocker.TradingStats();
-	return true;
-};
 
 CookiStocker.reset = function(hard) {
 	if (typeof CookiStocker.Bank === 'undefined')
